@@ -19,9 +19,17 @@ class Settings(BaseSettings):
 
     @property
     def database_url_async(self) -> str:
-        # async SQLAlchemy URL
+        """Async DB URL (FastAPI runtime)"""
         return (
             f"postgresql+asyncpg://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
+
+    @property
+    def database_url_sync(self) -> str:
+        """Sync DB URL (Alembic ONLY)"""
+        return (
+            f"postgresql://{self.db_user}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 

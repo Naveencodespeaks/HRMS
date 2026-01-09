@@ -14,9 +14,9 @@ sys.path.insert(0, str(SRC_DIR))
 # -------------------------------------------------
 # App imports
 # -------------------------------------------------
-from app.core.config import settings
-from app.core.db import sync_engine
-from app.models import Base
+from src.app.core.config import settings
+from src.app.core.db import sync_engine
+from src.app.models import Base
 
 # -------------------------------------------------
 # Alembic config
