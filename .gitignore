@@ -1,0 +1,91 @@
+# =====================================
+# OS / Editor
+# =====================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.log
+
+# =====================================
+# Environment files (SECRETS)
+# =====================================
+.env
+.env.*
+!.env.example
+
+# =====================================
+# Python (FastAPI Backend)
+# =====================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Poetry
+poetry.lock
+
+# Alembic
+alembic/versions/*.pyc
+
+# =====================================
+# Node / Next.js (Frontend)
+# =====================================
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =====================================
+# Frontend env files
+# =====================================
+front-end-development/.env.local
+front-end-development/.env.production
+front-end-development/.env.development
+
+# =====================================
+# Backend env files
+# =====================================
+back-end-development/.env
+back-end-development/.env.local
+back-end-development/.env.production
+back-end-development/.env.development
+
+# =====================================
+# Docker
+# =====================================
+*.pid
+docker-data/
+.docker/
+
+# =====================================
+# Database / Runtime
+# =====================================
+*.sqlite3
+*.db
+
+# =====================================
+# Coverage / Test
+# =====================================
+.coverage
+htmlcov/
+.pytest_cache/
+
+# =====================================
+# Logs
+# =====================================
+logs/
+*.log
