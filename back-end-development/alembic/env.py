@@ -12,11 +12,14 @@ SRC_DIR = BASE_DIR / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 # -------------------------------------------------
-# App imports
+# App imports (IMPORTANT: single reminder imports)
 # -------------------------------------------------
 from src.app.core.config import settings
-from src.app.core.db import sync_engine
-from src.app.models import Base
+from src.app.core.db import sync_engine, Base
+
+# Import models so Alembic can see them
+# (Do NOT remove even if unused)
+import src.app.models  # noqa: F401
 
 # -------------------------------------------------
 # Alembic config
@@ -26,6 +29,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# ✅ This metadata MUST come from core.db.Base
 target_metadata = Base.metadata
 
 # -------------------------------------------------
@@ -33,10 +37,11 @@ target_metadata = Base.metadata
 # -------------------------------------------------
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.sync_database_url,
+        url=settings.database_url_sync,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():
