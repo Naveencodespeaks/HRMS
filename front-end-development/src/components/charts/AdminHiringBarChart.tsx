@@ -17,23 +17,46 @@ const data = [
   { month: 'Apr', applied: 200, interviewed: 140, offered: 70, joined: 50 },
 ]
 
+/**
+ * Consistent color mapping
+ */
+const COLORS = {
+  applied: '#2563eb',     // Blue
+  interviewed: '#f59e0b', // Amber
+  offered: '#16a34a',     // Green
+  joined: '#9333ea',      // Purple
+}
+
 export default function AdminHiringBarChart() {
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold mb-4">
-        Hiring Pipeline (Monthly)
-      </h3>
-
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <XAxis dataKey="month" />
-          <YAxis />
+          <YAxis allowDecimals={false} />
           <Tooltip />
           <Legend />
-          <Bar dataKey="applied" />
-          <Bar dataKey="interviewed" />
-          <Bar dataKey="offered" />
-          <Bar dataKey="joined" />
+
+          <Bar
+            dataKey="applied"
+            fill={COLORS.applied}
+            radius={[4, 4, 0, 0]}
+          />
+          <Bar
+            dataKey="interviewed"
+            fill={COLORS.interviewed}
+            radius={[4, 4, 0, 0]}
+          />
+          <Bar
+            dataKey="offered"
+            fill={COLORS.offered}
+            radius={[4, 4, 0, 0]}
+          />
+          <Bar
+            dataKey="joined"
+            fill={COLORS.joined}
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
