@@ -1,28 +1,32 @@
-from sqlalchemy import String, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from __future__ import annotations
+
+import uuid
 from datetime import datetime
-from uuid import uuid4, UUID
+
+from sqlalchemy import Boolean, DateTime, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.app.core.db import Base
+
 
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True, default=uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    title: Mapped[str] = mapped_column(String(255))
-    message: Mapped[str] = mapped_column(String(500))
+    # which role should see it (admin/recruiter etc.)
+    role: Mapped[str] = mapped_column(String(50), index=True)
 
-    candidate_id: Mapped[UUID] = mapped_column(nullable=True)
+    # notification type
+    type: Mapped[str] = mapped_column(String(50), default="candidate_created", index=True)
 
-    role: Mapped[str] = mapped_column(String(50))  # recruiter / admin
+    title: Mapped[str] = mapped_column(String(200))
+    message: Mapped[str] = mapped_column(Text)
 
-    is_read: Mapped[bool] = mapped_column(
-        Boolean, default=False
-    )
+    # store candidate id as string for easy linking
+    entity_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
-    )
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

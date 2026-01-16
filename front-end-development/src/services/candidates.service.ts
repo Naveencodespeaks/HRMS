@@ -1,6 +1,6 @@
 import { Candidate } from '@/types/candidate'
 import { ApiResponse, PaginatedResponse } from '@/types/common'
-import api from '@/lib/api'
+import api from '@/lib/api-client'
 
 export const candidatesService = {
   async getAll(): Promise<PaginatedResponse<Candidate>> {
