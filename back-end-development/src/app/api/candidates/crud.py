@@ -8,7 +8,8 @@ from .schemas import CandidateCreate
 async def create_candidate(
     db: AsyncSession, payload: CandidateCreate
 ):
-    candidate = Candidate(**payload.dict())
+    # candidate = Candidate(**payload.dict())
+    candidate = Candidate(**payload.model_dump(exclude_unset=True))
     db.add(candidate)
     await db.commit()
     await db.refresh(candidate)

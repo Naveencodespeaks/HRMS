@@ -8,7 +8,7 @@ from src.app.models.notification import Notification
 class NotificationService:
 
     # ---------------------------
-    # Create Notification
+    # Create Candidate Notification
     # ---------------------------
     @staticmethod
     async def create_candidate_notification(
@@ -20,8 +20,10 @@ class NotificationService:
             notification = Notification(
                 title="New Candidate Applied",
                 message=f"{candidate_name} has submitted a new application",
-                candidate_id=candidate_id,
                 role="recruiter",
+                type="candidate_created",
+                entity_id=str(candidate_id),  # ✅ FIXED (was candidate_id)
+                is_read=False,
             )
 
             db.add(notification)
@@ -30,9 +32,9 @@ class NotificationService:
 
             return notification
 
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             await db.rollback()
-            raise
+            raise e
 
     # ---------------------------
     # Fetch Recruiter Notifications

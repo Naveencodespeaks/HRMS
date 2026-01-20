@@ -146,11 +146,11 @@ class CandidateBase(BaseModel):
     date_of_joining: Optional[date] = None
 
     # 🔗 NEW (Position mapping)
-    position_id: Optional[UUID] = None
+    # position_id: Optional[UUID] = None
 
     # 📄 Resume & Profile
-    upload_resume_path: Optional[str] = None
-    linkedin_profile: Optional[str] = None
+    # upload_resume_path: Optional[str] = None
+    # linkedin_profile: Optional[str] = None
 
     # -------------------------
     # Validators
@@ -213,8 +213,8 @@ class CandidateUpdate(BaseModel):
     date_of_joining: Optional[date] = None
 
     position_id: Optional[UUID] = None
-    upload_resume_path: Optional[str] = None
-    linkedin_profile: Optional[str] = None
+    # upload_resume_path: Optional[str] = None
+    # linkedin_profile: Optional[str] = None
 
 
 # =========================
@@ -231,10 +231,10 @@ class CandidateResponse(BaseModel):
     experience_type: str
 
     expected_ctc: int
-    position_id: Optional[UUID]
+    # position_id: Optional[UUID]
 
-    linkedin_profile: Optional[str]
-    upload_resume_path: Optional[str]
+    # linkedin_profile: Optional[str]
+    # upload_resume_path: Optional[str]
 
     is_active: bool
 

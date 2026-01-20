@@ -34,4 +34,4 @@ class Candidate(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     deleted_by = Column(String(100),nullable=True)
-    position_id = Column(UUID(as_uuid=True),ForeignKey("positions.id", ondelete="SET NULL"),nullable=True, index=True)
+    # position_id = Column(UUID(as_uuid=True),ForeignKey("positions.id", ondelete="SET NULL"),nullable=True, index=True)
