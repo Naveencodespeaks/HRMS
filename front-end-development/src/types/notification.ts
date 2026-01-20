@@ -4,7 +4,7 @@ export type NotificationType = 'NEW_CANDIDATE'
 export interface NotificationGroupItem {
   label: string // e.g. "Software Developer"
   count: number // e.g. 6
-}
+} 
 
 export interface NotificationSummary {
   type: NotificationType
