@@ -1,3 +1,4 @@
+
 # from pydantic import (
 #     BaseModel,
 #     EmailStr,
@@ -11,7 +12,7 @@
 
 
 # # =========================
-# # Base Schema
+# # Base Schema (INPUT)
 # # =========================
 # class CandidateBase(BaseModel):
 #     first_name: str
@@ -31,11 +32,20 @@
 #     current_ctc: Optional[int] = None
 #     expected_ctc: int
 #     notice_period_days: Optional[int] = None
+
 #     immediate_joining: bool = False
 #     date_of_joining: Optional[date] = None
-#     upload_resume_path: Optional[str] = None
-#     linkedin_profile: Optional[str] = None
 
+#     # 🔗 NEW (Position mapping)
+#     # position_id: Optional[UUID] = None
+
+#     # 📄 Resume & Profile
+#     # upload_resume_path: Optional[str] = None
+#     # linkedin_profile: Optional[str] = None
+
+#     # -------------------------
+#     # Validators
+#     # -------------------------
 #     @field_validator("expected_ctc")
 #     @classmethod
 #     def expected_ctc_non_negative(cls, v: int) -> int:
@@ -89,21 +99,42 @@
 #     current_ctc: Optional[int] = None
 #     expected_ctc: Optional[int] = None
 #     notice_period_days: Optional[int] = None
+
 #     immediate_joining: Optional[bool] = None
 #     date_of_joining: Optional[date] = None
-#     upload_resume_path: Optional[str] = None
-#     linkedin_profile: Optional[str] = None
+
+#     position_id: Optional[UUID] = None
+#     # upload_resume_path: Optional[str] = None
+#     # linkedin_profile: Optional[str] = None
 
 
 # # =========================
-# # Response Schema
+# # Response Schema (OUTPUT)
 # # =========================
-# class CandidateResponse(CandidateBase):
+# class CandidateResponse(BaseModel):
 #     id: UUID
+#     first_name: str
+#     last_name: str
+#     phone: str
+#     email: EmailStr
+
+#     highest_qualification: str
+#     experience_type: str
+
+#     expected_ctc: int
+#     resume_url: Optional[str]
+    
+#     # position_id: Optional[UUID]
+
+#     # linkedin_profile: Optional[str]
+#     # upload_resume_path: Optional[str]
+
 #     is_active: bool
 
-#     # ✅ Pydantic v2 ORM support
 #     model_config = ConfigDict(from_attributes=True)
+
+
+
 
 
 
@@ -145,13 +176,6 @@ class CandidateBase(BaseModel):
     immediate_joining: bool = False
     date_of_joining: Optional[date] = None
 
-    # 🔗 NEW (Position mapping)
-    # position_id: Optional[UUID] = None
-
-    # 📄 Resume & Profile
-    # upload_resume_path: Optional[str] = None
-    # linkedin_profile: Optional[str] = None
-
     # -------------------------
     # Validators
     # -------------------------
@@ -164,15 +188,11 @@ class CandidateBase(BaseModel):
 
     @model_validator(mode="after")
     def validate_experience_rules(self):
-        if self.experience_type == "fresher":
-            self.previous_company = None
-            self.role = None
-            self.company_location = None
-            self.total_experience_years = None
-            self.current_ctc = None
-            self.notice_period_days = None
-            self.immediate_joining = True
-        else:
+        """
+        Only VALIDATE here.
+        Do NOT mutate values (business logic lives in service layer).
+        """
+        if self.experience_type == "experienced":
             if self.total_experience_years is None:
                 raise ValueError(
                     "total_experience_years is required for experienced candidates"
@@ -184,6 +204,10 @@ class CandidateBase(BaseModel):
 # Create Schema
 # =========================
 class CandidateCreate(CandidateBase):
+    """
+    JSON-only payload.
+    Resume file is handled separately via UploadFile.
+    """
     pass
 
 
@@ -212,9 +236,8 @@ class CandidateUpdate(BaseModel):
     immediate_joining: Optional[bool] = None
     date_of_joining: Optional[date] = None
 
-    position_id: Optional[UUID] = None
-    # upload_resume_path: Optional[str] = None
-    # linkedin_profile: Optional[str] = None
+    # ❌ position_id REMOVED (not yet in model)
+    # ❌ resume fields REMOVED (handled via upload API)
 
 
 # =========================
@@ -222,6 +245,7 @@ class CandidateUpdate(BaseModel):
 # =========================
 class CandidateResponse(BaseModel):
     id: UUID
+
     first_name: str
     last_name: str
     phone: str
@@ -230,11 +254,10 @@ class CandidateResponse(BaseModel):
     highest_qualification: str
     experience_type: str
 
+    current_ctc: Optional[int]
     expected_ctc: int
-    # position_id: Optional[UUID]
 
-    # linkedin_profile: Optional[str]
-    # upload_resume_path: Optional[str]
+    resume_url: Optional[str]
 
     is_active: bool
 

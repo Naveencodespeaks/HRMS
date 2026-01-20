@@ -28,6 +28,8 @@ class Candidate(Base):
     immediate_joining = Column(Boolean, default=False, nullable=False)
     # upload_resume_path = Column(String, nullable=True)
     #linkedin_profile = Column(String, nullable=True)
+    resume_url = Column(String, nullable=True)
+
     date_of_joining = Column(Date, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

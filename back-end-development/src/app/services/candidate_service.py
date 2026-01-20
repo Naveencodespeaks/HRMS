@@ -1,5 +1,5 @@
-# src/app/services/candidate_service.py
 
+# src/app/services/candidate_service.py
 
 from typing import Optional, List, Tuple
 from uuid import UUID
@@ -9,14 +9,17 @@ from sqlalchemy import select, or_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from fastapi import UploadFile
+
 from src.app.models.candidate import Candidate
 from src.app.api.candidates.schemas import CandidateCreate, CandidateUpdate
-
+from src.app.utils.sharepoint_resume_storage import upload_resume_to_sharepoint
+from src.app.utils.sharepoint_resume_storage import get_secure_resume_download_url, delete_resume_from_sharepoint
 
 class CandidateService:
 
     # -----------------------------
-    # CREATE (FIXED)
+    # CREATE (WITHOUT RESUME) - EXISTING
     # -----------------------------
     @staticmethod
     async def create(
@@ -46,14 +49,54 @@ class CandidateService:
         db.add(candidate)
 
         try:
-            await db.flush()     # ✅ forces INSERT
-            await db.commit()    # ✅ persists transaction
+            await db.flush()
+            await db.commit()
         except IntegrityError:
             await db.rollback()
             raise ValueError("Candidate with this email already exists")
 
         await db.refresh(candidate)
         return candidate
+
+    # =============================
+    # CREATE WITH RESUME (NEW)
+    # =============================
+    @staticmethod
+    async def create_with_resume(
+        *,
+        db: AsyncSession,
+        payload: CandidateCreate,
+        resume: UploadFile,
+    ) -> Candidate:
+        """
+        Create candidate and upload resume to SharePoint
+        """
+
+        # 1️⃣ Create candidate (reuse existing logic)
+        candidate = await CandidateService.create(db, payload)
+
+        try:
+            # 2️⃣ Upload resume to SharePoint
+            resume_bytes = await resume.read()
+
+            resume_url = upload_resume_to_sharepoint(
+                candidate_id=str(candidate.id),
+                filename=resume.filename,
+                file_bytes=resume_bytes,
+                content_type=resume.content_type or "application/octet-stream",
+            )
+
+            # 3️⃣ Save resume URL
+            candidate.resume_url = resume_url
+            await db.commit()
+            await db.refresh(candidate)
+
+            return candidate
+
+        except Exception:
+            # Candidate already exists; resume failed
+            await db.rollback()
+            raise
 
     # -----------------------------
     # GET ACTIVE BY ID
@@ -181,3 +224,26 @@ class CandidateService:
         await db.commit()
         await db.refresh(candidate)
         return candidate
+
+
+
+
+
+
+
+class CandidateService:
+    ...
+    @staticmethod
+    async def get_resume_download_url(
+        db: AsyncSession,
+        candidate_id,
+    ) -> str:
+        candidate = await CandidateService.get_by_id(db, candidate_id)
+
+        if not candidate:
+            raise ValueError("Candidate not found")
+
+        if not candidate.resume_url:
+            raise ValueError("Resume not uploaded")
+
+        return get_secure_resume_download_url(candidate.resume_url)
