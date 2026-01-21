@@ -1,7 +1,7 @@
 import requests
 import base64
-from src.app.core.config import settings
 
+from src.app.core.config import settings
 
 
 GRAPH_SCOPE = "https://graph.microsoft.com/.default"
@@ -11,15 +11,16 @@ def get_graph_access_token() -> str:
     """
     Get Microsoft Graph access token using client credentials
     """
+
     token_url = (
         f"https://login.microsoftonline.com/"
-        f"{settings.AZURE_TENANT_ID}/oauth2/v2.0/token"
+        f"{settings.azure_tenant_id}/oauth2/v2.0/token"
     )
 
     data = {
         "grant_type": "client_credentials",
-        "client_id": settings.AZURE_CLIENT_ID,
-        "client_secret": settings.AZURE_CLIENT_SECRET,
+        "client_id": settings.azure_client_id,
+        "client_secret": settings.azure_client_secret,
         "scope": GRAPH_SCOPE,
     }
 
@@ -47,8 +48,8 @@ def upload_resume_to_sharepoint(
 
     upload_url = (
         f"https://graph.microsoft.com/v1.0/sites/"
-        f"{settings.SHAREPOINT_SITE_ID}"
-        f"/drive/root:/{settings.SHAREPOINT_RESUME_FOLDER}/{safe_filename}:/content"
+        f"{settings.sharepoint_site_id}"
+        f"/drive/root:/{settings.sharepoint_resume_folder}/{safe_filename}:/content"
     )
 
     headers = {
@@ -78,8 +79,8 @@ def delete_resume_from_sharepoint(
 
     delete_url = (
         f"https://graph.microsoft.com/v1.0/sites/"
-        f"{settings.SHAREPOINT_SITE_ID}"
-        f"/drive/root:/{settings.SHAREPOINT_RESUME_FOLDER}/{safe_filename}"
+        f"{settings.sharepoint_site_id}"
+        f"/drive/root:/{settings.sharepoint_resume_folder}/{safe_filename}"
     )
 
     headers = {
@@ -88,8 +89,6 @@ def delete_resume_from_sharepoint(
 
     response = requests.delete(delete_url, headers=headers)
     response.raise_for_status()
-
-
 
 
 def get_secure_resume_download_url(resume_web_url: str) -> str:

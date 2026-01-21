@@ -1,4 +1,3 @@
-
 # src/app/services/candidate_service.py
 
 from typing import Optional, List, Tuple
@@ -13,54 +12,17 @@ from fastapi import UploadFile
 
 from src.app.models.candidate import Candidate
 from src.app.api.candidates.schemas import CandidateCreate, CandidateUpdate
-from src.app.utils.sharepoint_resume_storage import upload_resume_to_sharepoint
-from src.app.utils.sharepoint_resume_storage import get_secure_resume_download_url, delete_resume_from_sharepoint
+from src.app.utils.sharepoint_resume_storage import (
+    upload_resume_to_sharepoint,
+    get_secure_resume_download_url,
+    delete_resume_from_sharepoint,
+)
 
 class CandidateService:
 
     # -----------------------------
-    # CREATE (WITHOUT RESUME) - EXISTING
+    # CREATE WITH RESUME (ONLY ENTRY POINT)
     # -----------------------------
-    @staticmethod
-    async def create(
-        db: AsyncSession,
-        payload: CandidateCreate,
-    ) -> Candidate:
-
-        candidate = Candidate(
-            first_name=payload.first_name,
-            last_name=payload.last_name,
-            phone=payload.phone,
-            email=payload.email,
-            address=payload.address,
-            highest_qualification=payload.highest_qualification,
-            experience_type=payload.experience_type,
-            previous_company=payload.previous_company,
-            role=payload.role,
-            company_location=payload.company_location,
-            total_experience_years=payload.total_experience_years,
-            current_ctc=payload.current_ctc,
-            expected_ctc=payload.expected_ctc,
-            notice_period_days=payload.notice_period_days,
-            immediate_joining=payload.immediate_joining,
-            date_of_joining=payload.date_of_joining,
-        )
-
-        db.add(candidate)
-
-        try:
-            await db.flush()
-            await db.commit()
-        except IntegrityError:
-            await db.rollback()
-            raise ValueError("Candidate with this email already exists")
-
-        await db.refresh(candidate)
-        return candidate
-
-    # =============================
-    # CREATE WITH RESUME (NEW)
-    # =============================
     @staticmethod
     async def create_with_resume(
         *,
@@ -69,34 +31,75 @@ class CandidateService:
         resume: UploadFile,
     ) -> Candidate:
         """
-        Create candidate and upload resume to SharePoint
+        Create candidate with mandatory resume.
+        Resume is uploaded to SharePoint and URL is stored in DB.
         """
 
-        # 1️⃣ Create candidate (reuse existing logic)
-        candidate = await CandidateService.create(db, payload)
+        resume_url = None
 
         try:
-            # 2️⃣ Upload resume to SharePoint
+            # -----------------------------
+            # 1️⃣ Upload resume FIRST
+            # -----------------------------
             resume_bytes = await resume.read()
 
             resume_url = upload_resume_to_sharepoint(
-                candidate_id=str(candidate.id),
+                candidate_id="temp",  # temp placeholder
                 filename=resume.filename,
                 file_bytes=resume_bytes,
                 content_type=resume.content_type or "application/octet-stream",
             )
 
-            # 3️⃣ Save resume URL
-            candidate.resume_url = resume_url
+            # -----------------------------
+            # 2️⃣ Create candidate WITH resume_url
+            # -----------------------------
+            candidate = Candidate(
+                first_name=payload.first_name,
+                last_name=payload.last_name,
+                phone=payload.phone,
+                email=payload.email,
+                address=payload.address,
+                highest_qualification=payload.highest_qualification,
+                experience_type=payload.experience_type,
+                previous_company=payload.previous_company,
+                role=payload.role,
+                company_location=payload.company_location,
+                total_experience_years=payload.total_experience_years,
+                current_ctc=payload.current_ctc,
+                expected_ctc=payload.expected_ctc,
+                notice_period_days=payload.notice_period_days,
+                immediate_joining=bool(payload.immediate_joining),
+                date_of_joining=payload.date_of_joining,
+                resume_url=resume_url,
+            )
+
+            db.add(candidate)
+
+            # -----------------------------
+            # 3️⃣ Commit DB (FINAL)
+            # -----------------------------
             await db.commit()
             await db.refresh(candidate)
 
             return candidate
 
-        except Exception:
-            # Candidate already exists; resume failed
+        except IntegrityError:
             await db.rollback()
-            raise
+            if resume_url:
+                try:
+                    delete_resume_from_sharepoint(resume_url)
+                except Exception:
+                    pass
+            raise ValueError("Candidate with this email already exists")
+
+        except Exception as exc:
+            await db.rollback()
+            if resume_url:
+                try:
+                    delete_resume_from_sharepoint(resume_url)
+                except Exception:
+                    pass
+            raise exc
 
     # -----------------------------
     # GET ACTIVE BY ID
@@ -157,10 +160,7 @@ class CandidateService:
 
         stmt = (
             stmt
-            .order_by(
-                Candidate.created_at.desc(),
-                Candidate.id.desc(),
-            )
+            .order_by(Candidate.created_at.desc(), Candidate.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
@@ -225,14 +225,9 @@ class CandidateService:
         await db.refresh(candidate)
         return candidate
 
-
-
-
-
-
-
-class CandidateService:
-    ...
+    # -----------------------------
+    # RESUME DOWNLOAD URL
+    # -----------------------------
     @staticmethod
     async def get_resume_download_url(
         db: AsyncSession,
