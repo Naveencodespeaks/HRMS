@@ -19,3 +19,12 @@ from .notification import Notification
 
 # ✅ HR access link MUST be imported here
 from .hr_access_link import HRAccessLink
+
+
+
+from src.app.models.candidate import Candidate
+from src.app.models.user import User
+from src.app.models.hr_access_link import HRAccessLink
+from src.app.models.interview import Interview
+from src.app.models.offer import Offer
+from src.app.models.job import Job

@@ -26,6 +26,7 @@ class Candidate(Base):
     expected_ctc = Column(Integer, nullable=False)
     notice_period_days = Column(Integer, nullable=True)
     immediate_joining = Column(Boolean, default=False, nullable=False)
+    status = Column(String(50), default="APPLIED", nullable=False, index=True)
     # upload_resume_path = Column(String, nullable=True)
     #linkedin_profile = Column(String, nullable=True)
     resume_url = Column(String, nullable=True)

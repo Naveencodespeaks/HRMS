@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import UploadFile
+from src.app.repositories.hr_token_repo import HRTokenRepository
 
 from src.app.models.candidate import Candidate
 from src.app.api.candidates.schemas import CandidateCreate, CandidateUpdate
@@ -80,6 +81,11 @@ class CandidateService:
             # -----------------------------
             await db.commit()
             await db.refresh(candidate)
+             # -----------------------------
+                #  Generate HR access token
+            # -----------------------------
+            hr_token_repo = HRTokenRepository(db)
+            await hr_token_repo.create_token(candidate.id)
 
             return candidate
 
@@ -100,6 +106,8 @@ class CandidateService:
                 except Exception:
                     pass
             raise exc
+
+   
 
     # -----------------------------
     # GET ACTIVE BY ID

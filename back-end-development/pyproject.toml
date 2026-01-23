@@ -25,7 +25,10 @@ dependencies = [
     "python-dotenv>=1.0.1,<2.0.0",
     "psycopg2 (>=2.9.11,<3.0.0)",
     "azure-storage-blob (>=12.28.0,<13.0.0)",
-    "python-multipart (>=0.0.21,<0.0.22)"
+    "python-multipart (>=0.0.21,<0.0.22)",
+    "apscheduler (>=3.11.2,<4.0.0)",
+    "pandas (>=3.0.0,<4.0.0)",
+    "xlsxwriter (>=3.2.9,<4.0.0)"
 ]
 
 [tool.poetry.group.dev.dependencies]

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src.app.core.scheduler import start_scheduler, shutdown_scheduler
+
 
 from src.app.api.router import api_router
 
@@ -19,6 +21,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def on_startup():
+    start_scheduler()
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    shutdown_scheduler()
 
 # ✅ API ROUTES
 # app.include_router(api_router, prefix="/api/v1")

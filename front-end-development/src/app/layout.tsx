@@ -1,4 +1,8 @@
 import '@/styles/globals.css'
+// import '@fullcalendar/daygrid/index.css'
+// import '@fullcalendar/timegrid/index.css'
+// import '@fullcalendar/common/index.css'
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
