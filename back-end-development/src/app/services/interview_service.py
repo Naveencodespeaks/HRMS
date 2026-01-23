@@ -1,7 +1,7 @@
 # src/app/services/interview_service.py
 
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,11 @@ from sqlalchemy import select
 from src.app.models.interview import Interview
 from src.app.models.candidate import Candidate
 from src.app.models.job import Job
+
+# ✅ External helpers
+from src.app.utils.email import send_teams_interview_email
+from src.app.utils.teams import create_teams_meeting
+from src.app.utils.email import _get_graph_access_token
 
 
 class InterviewService:
@@ -21,19 +26,21 @@ class InterviewService:
     # =====================================================
     async def schedule_interview(self, payload) -> Interview:
         """
-        Schedules an interview.
-        - Candidate must exist
-        - Job must exist & be OPEN (if provided)
+        Schedules an interview with:
+        - Candidate validation
+        - Job validation (optional)
+        - Microsoft Teams meeting
+        - Email notification
         """
 
         # 1️⃣ Validate candidate
-        candidate_result = await self.db.execute(
+        result = await self.db.execute(
             select(Candidate).where(
                 Candidate.id == payload.candidate_id,
-                Candidate.is_active == True,
+                Candidate.is_active.is_(True),
             )
         )
-        candidate = candidate_result.scalar_one_or_none()
+        candidate = result.scalar_one_or_none()
 
         if not candidate:
             raise HTTPException(
@@ -41,13 +48,13 @@ class InterviewService:
                 detail="Candidate not found or inactive",
             )
 
-        # 2️⃣ Validate job (if provided)
+        # 2️⃣ Validate job (optional)
         if payload.job_id:
             job_result = await self.db.execute(
                 select(Job).where(
                     Job.id == payload.job_id,
                     Job.status == "OPEN",
-                    Job.is_active == True,
+                    Job.is_active.is_(True),
                 )
             )
             job = job_result.scalar_one_or_none()
@@ -58,7 +65,7 @@ class InterviewService:
                     detail="Invalid or closed job",
                 )
 
-        # 3️⃣ Create interview
+        # 3️⃣ Create interview (DB first)
         interview = Interview(
             candidate_id=payload.candidate_id,
             job_id=payload.job_id,
@@ -72,75 +79,40 @@ class InterviewService:
         )
 
         self.db.add(interview)
+        await self.db.flush()  # ✅ ensures interview.id exists
+
+        # 4️⃣ Create Microsoft Teams meeting
+        access_token = _get_graph_access_token()
+
+        meeting_link = create_teams_meeting(
+            access_token=access_token,
+            subject=f"Interview – {candidate.first_name}",
+            start_time=payload.scheduled_at.isoformat(),
+            end_time=(
+                payload.scheduled_at + timedelta(minutes=60)
+            ).isoformat(),
+        )
+
+        interview.meeting_platform = "MICROSOFT_TEAMS"
+        interview.meeting_link = meeting_link
+
+        # 5️⃣ Update candidate status
+        candidate.status = "INTERVIEW_SCHEDULED"
+
         await self.db.commit()
         await self.db.refresh(interview)
 
+        # 6️⃣ Send interview email (outside transaction)
+        send_teams_interview_email(
+            to_email=candidate.email,
+            candidate_name=candidate.first_name,
+            interview_datetime=payload.scheduled_at.strftime(
+                "%d %b %Y, %I:%M %p"
+            ),
+            meeting_link=meeting_link,
+        )
+
         return interview
-    
-
-    def send_teams_interview_email(
-    *,
-    to_email: str,
-    candidate_name: str,
-    interview_datetime: str,
-    meeting_link: str,
-) -> None:
-    access_token = _get_graph_access_token()
-
-    url = GRAPH_SEND_MAIL_URL.format(sender=settings.mail_from)
-
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "message": {
-            "subject": "Interview Scheduled – Mahavir Group",
-            "body": {
-                "contentType": "HTML",
-                "content": f"""
-                <p>Dear <strong>{candidate_name}</strong>,</p>
-
-                <p>Your interview has been scheduled.</p>
-
-                <p>
-                  <b>Date & Time:</b> {interview_datetime}<br/>
-                  <b>Platform:</b> Microsoft Teams
-                </p>
-
-                <p>
-                  👉 <a href="{meeting_link}">
-                  Click here to join the interview
-                  </a>
-                </p>
-
-                <p>
-                  <i>No Microsoft account required. You may join via browser.</i>
-                </p>
-
-                <br/>
-
-                <p>
-                  Best Regards,<br/>
-                  <strong>Mahavir Group HR Team</strong>
-                </p>
-                """,
-            },
-            "toRecipients": [
-                {
-                    "emailAddress": {
-                        "address": to_email
-                    }
-                }
-            ],
-        },
-        "saveToSentItems": True,
-    }
-
-    response = requests.post(url, headers=headers, json=payload)
-    response.raise_for_status()
-
 
     # =====================================================
     # ✏️ UPDATE INTERVIEW RESULT
@@ -164,6 +136,14 @@ class InterviewService:
         if payload.status in {"PASSED", "FAILED"}:
             interview.completed_at = datetime.now(timezone.utc)
 
+            candidate = await self.db.get(Candidate, interview.candidate_id)
+            if candidate:
+                candidate.status = (
+                    "INTERVIEW_PASSED"
+                    if payload.status == "PASSED"
+                    else "INTERVIEW_FAILED"
+                )
+
         await self.db.commit()
         await self.db.refresh(interview)
 
@@ -179,3 +159,12 @@ class InterviewService:
             .order_by(Interview.round_number)
         )
         return result.scalars().all()
+
+    # =====================================================
+    # 🔍 GET INTERVIEW BY ID
+    # =====================================================
+    async def get_interview_by_id(self, interview_id: UUID):
+        result = await self.db.execute(
+            select(Interview).where(Interview.id == interview_id)
+        )
+        return result.scalar_one_or_none()

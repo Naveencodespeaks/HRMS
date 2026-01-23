@@ -34,3 +34,6 @@ class InterviewResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class RecordingUpdateSchema(BaseModel):
+    recording_url: str

@@ -156,3 +156,15 @@ class InterviewService:
             )
 
         return interview
+
+    # ==========================================================================================
+    async def update_recording(self, interview_id, data):
+        interview = await self.get_interview_by_id(interview_id)
+        if not interview:
+            raise HTTPException(404, "Interview not found")
+
+        interview.recording_url = data.recording_url
+        interview.recording_status = "AVAILABLE"
+
+        await self.db.commit()
+        return interview
