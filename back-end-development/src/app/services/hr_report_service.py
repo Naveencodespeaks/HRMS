@@ -91,7 +91,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.models.candidate import Candidate
 from src.app.models.hr_access_link import HRAccessLink
 from src.app.core.config import settings
-from src.app.utils.email import send_candidate_confirmation_email as send_email
+from src.app.utils.email import send_email
 
 
 class HRReportService:

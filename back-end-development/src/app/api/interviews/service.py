@@ -12,6 +12,8 @@ from src.app.utils.email import (
     _get_graph_access_token,
     send_teams_interview_email,
 )
+from src.app.utils.email import send_email
+
 from src.app.utils.teams import create_teams_meeting
 
 

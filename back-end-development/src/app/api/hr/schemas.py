@@ -3,6 +3,14 @@ from uuid import UUID
 from datetime import datetime, date
 from pydantic import BaseModel, Field
 
+from datetime import datetime
+from typing import Literal, Optional
+from uuid import UUID
+from pydantic import BaseModel
+
+HRDecisionType = Literal["APPROVE", "HOLD", "REJECT", "SHORTLIST", "NOT_SHORTLIST", "OFFER_CREATED"]
+
+
 
 # ==============================
 # Interview Item
@@ -48,6 +56,7 @@ class HRCandidateDetail(BaseModel):
 
     interviews: List[HRInterviewItem]
     offer: Optional[HROfferInfo]
+    
 
 
 # ==============================
@@ -69,3 +78,52 @@ class HRDecisionRequest(BaseModel):
 class HRDecisionResponse(BaseModel):
     message: str
     action: str
+
+
+
+class HRDashboardCandidateItem(BaseModel):
+    id: UUID
+    full_name: str
+    email: str
+    phone: str
+    role: Optional[str] = None
+    experience_type: str
+    status: str
+    latest_round: Optional[str] = None
+    latest_interview_status: Optional[str] = None
+    offer_status: Optional[str] = None
+    # ✅ NEW HR FIELDS
+    hr_decision: Optional[str] = None
+    hr_decision_remarks: Optional[str] = None
+    hr_decision_at: Optional[datetime] = None
+
+    created_at: datetime
+
+    class Config:
+        from_attributes = True # SQLAlchemy → Pydantic
+
+
+class HRDashboardResponse(BaseModel):
+    items: List[HRDashboardCandidateItem]
+    page: int
+    page_size: int
+    total: int
+
+
+class HRDecisionRequest(BaseModel):
+    decision: HRDecisionType
+    remarks: Optional[str] = None
+
+
+class HRDecisionResponse(BaseModel):
+    candidate_id: UUID
+    status: str
+    hr_decision: str
+    hr_decision_remarks: Optional[str] = None
+    hr_decision_at: Optional[datetime] = None
+
+
+class HRAudit(BaseModel):
+    opened_at: datetime | None
+    opened_by: str | None
+    open_count: int | None

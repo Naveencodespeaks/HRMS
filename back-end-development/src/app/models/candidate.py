@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime
+from typing import Text
+from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy import ForeignKey
@@ -37,4 +38,8 @@ class Candidate(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     deleted_by = Column(String(100),nullable=True)
+    hr_decision = Column(String(20), nullable=True)  # APPROVE / HOLD / REJECT
+    hr_decision_remarks = Column(Text, nullable=True)
+    hr_decision_at = Column(DateTime(timezone=True), nullable=True)
+
     # position_id = Column(UUID(as_uuid=True),ForeignKey("positions.id", ondelete="SET NULL"),nullable=True, index=True)
